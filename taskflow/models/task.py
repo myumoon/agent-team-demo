@@ -1,3 +1,4 @@
+"""タスクのデータモデル定義"""
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -6,7 +7,7 @@ import uuid
 
 
 class TaskStatus(Enum):
-    """タスクのステータスを表す列挙型"""
+    """タスクのステータス"""
 
     PENDING = "pending"
     COMPLETED = "completed"
@@ -14,7 +15,16 @@ class TaskStatus(Enum):
 
 @dataclass
 class Task:
-    """タスクデータクラス"""
+    """タスクを表すデータクラス。
+
+    Attributes:
+        title: タスクのタイトル
+        description: タスクの説明
+        id: タスクの一意識別子（UUID4）
+        status: タスクのステータス
+        created_at: タスクの作成日時
+        completed_at: タスクの完了日時（未完了の場合はNone）
+    """
 
     title: str
     description: str = ""

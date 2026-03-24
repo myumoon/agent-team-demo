@@ -1,45 +1,23 @@
-"""タスク管理のビジネスロジック"""
+"""タスク管理サービス"""
 from datetime import datetime
-from typing import Protocol
 
 from taskflow.models.task import Task, TaskStatus
-
-
-class StorageProtocol(Protocol):
-    """ストレージのプロトコル定義"""
-
-    def load(self) -> list[Task]:
-        """タスク一覧を読み込む"""
-        ...
-
-    def save(self, tasks: list[Task]) -> None:
-        """タスク一覧を保存する"""
-        ...
-
-
-class TaskNotFoundError(Exception):
-    """タスクが見つからない場合の例外"""
-
-    pass
+from taskflow.storage.base import BaseStorage
 
 
 class TaskService:
-    """タスク管理のビジネスロジックを提供するサービスクラス。
+    """タスク管理サービス"""
 
-    Attributes:
-        storage: タスクを永続化するストレージ
-    """
-
-    def __init__(self, storage: StorageProtocol) -> None:
-        """TaskServiceを初期化する。
+    def __init__(self, storage: BaseStorage) -> None:
+        """StorageをDIで受け取る。
 
         Args:
-            storage: タスクを永続化するストレージ
+            storage: タスクの永続化を担うストレージ実装
         """
-        self.storage = storage
+        self._storage = storage
 
     def add_task(self, title: str, description: str = "") -> Task:
-        """新しいタスクを追加する。
+        """タスクを追加して返す。
 
         Args:
             title: タスクのタイトル
@@ -48,53 +26,54 @@ class TaskService:
         Returns:
             作成されたタスク
         """
-        tasks = self.storage.load()
+        tasks = self._storage.load()
         task = Task(title=title, description=description)
         tasks.append(task)
-        self.storage.save(tasks)
+        self._storage.save(tasks)
         return task
 
     def list_tasks(self) -> list[Task]:
-        """全タスクを一覧で返す。
+        """全タスクを返す。
 
         Returns:
             タスクのリスト
         """
-        return self.storage.load()
+        return self._storage.load()
 
     def complete_task(self, task_id: str) -> Task:
-        """指定IDのタスクを完了状態にする。
+        """タスクを完了にして返す。
 
         Args:
-            task_id: 完了するタスクのID
+            task_id: 完了にするタスクのID
 
         Returns:
             更新されたタスク
 
         Raises:
-            TaskNotFoundError: 指定IDのタスクが存在しない場合
+            ValueError: 指定されたIDのタスクが存在しない場合
         """
-        tasks = self.storage.load()
+        tasks = self._storage.load()
         for task in tasks:
             if task.id == task_id:
                 task.status = TaskStatus.COMPLETED
                 task.completed_at = datetime.now()
-                self.storage.save(tasks)
+                self._storage.save(tasks)
                 return task
-        raise TaskNotFoundError(f"タスクが見つかりません: {task_id}")
+        raise ValueError(f"Task with id '{task_id}' not found")
 
     def delete_task(self, task_id: str) -> None:
-        """指定IDのタスクを削除する。
+        """タスクを削除する。
 
         Args:
             task_id: 削除するタスクのID
 
         Raises:
-            TaskNotFoundError: 指定IDのタスクが存在しない場合
+            ValueError: 指定されたIDのタスクが存在しない場合
         """
-        tasks = self.storage.load()
-        original_count = len(tasks)
-        tasks = [t for t in tasks if t.id != task_id]
-        if len(tasks) == original_count:
-            raise TaskNotFoundError(f"タスクが見つかりません: {task_id}")
-        self.storage.save(tasks)
+        tasks = self._storage.load()
+        for i, task in enumerate(tasks):
+            if task.id == task_id:
+                tasks.pop(i)
+                self._storage.save(tasks)
+                return
+        raise ValueError(f"Task with id '{task_id}' not found")

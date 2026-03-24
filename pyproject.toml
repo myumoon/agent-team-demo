@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "taskflow"
+version = "0.1.0"
+description = "シンプルなタスク管理CLIツール"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+taskflow = "taskflow.cli.app:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["taskflow*"]
